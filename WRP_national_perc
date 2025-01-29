@@ -1,0 +1,11 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from google.colab import files
+uploaded = files.upload()
+# WRP_national.csv 
+# world religion project, by nation instead by global 
+wrp_national_perc = pd.read_csv('WRP_national_perc.csv')
+# this dataset has been cleaned to include only populations, and percentages. 
+#therefore, columns 4-39 have been removed from original WRP_national.csv                                                              
+print(wrp_national_perc.head())  # Display first few rows
