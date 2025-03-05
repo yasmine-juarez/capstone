@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Choropleth Map with ArcGIS Services</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.29/"></script>
+    <style>
+        html, body, #viewDiv {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            z-index: 10;
+            border-radius: 5px;
+        }
+        #legendDiv {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            z-index: 10;
+            border-radius: 5px;
+        }
+        #descriptionPopup {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 10px;
+            z-index: 10;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <label for="yearSlider">Select Year:</label>
+        <input type="range" id="yearSlider" min="1960" max="2021" value="2000" step="1"/>
+        <span id="yearLabel">2010</span>
+        <br/><label for="featureSelect">Choose Feature:</label>
+        <select id="featureSelect">
+            <option value="e_fh_status" data-desc="Freedom House status designation (Free, Partly Free, Not Free)">e_fh_status</option>
+            <option value="v2x_mpi" data-desc="Multiplicative polyarchy index measuring electoral democracy">v2x_mpi</option>
+            <option value="e_lexical_index" data-desc="Lexical democracy index categorization">e_lexical_index</option>
+            <option value="v2x_libdem" data-desc="Liberal democracy index evaluating individual rights">v2x_libdem</option>
+            <option value="v2xcl_rol" data-desc="Rule of Law index measuring legal equality and access to justice">v2xcl_rol</option>
+            <option value="v2x_egaldem" data-desc="Egalitarian democracy index focusing on equal political participation">v2x_egaldem</option>
+            <option value="e_fh_pr" data-desc="Freedom House political rights score">e_fh_pr</option>
+            <option value="e_fh_cl" data-desc="Freedom House civil liberties score">e_fh_cl</option>
+            <option value="pred_cl" data-desc="Predicted civil liberties score">pred_cl</option>
+            <option value="pred_pr" data-desc="Predicted political rights score">pred_pr</option>
+            <option value="pred_status" data-desc="Predicted Freedom House status">pred_status</option>
+        </select>
+    </div>
+
+    <div id="legendDiv">
+        <h4>Legend</h4>
+        <div id="legendContent"></div>
+    </div>
+
+    <div id="descriptionPopup">
+        <h4>Feature Description</h4>
+        <p id="featureDesc">Select a variable to see its description.</p>
+    </div>
+
+    <div id="viewDiv"></div>
+    
+    <script>
+        require(["esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/rest/support/Query"], 
+        function(Map, MapView, FeatureLayer, Query) {
+            const map = new Map({ basemap: "topo-vector" });
+            const view = new MapView({ container: "viewDiv", map: map, center: [0, 20], zoom: 3 });
+
+            const layer = new FeatureLayer({
+                url: "https://services.arcgis.com/LBbVDC0hKPAnLRpO/arcgis/rest/services/Dashboard_data/FeatureServer",
+                outFields: ["*"],
+                definitionExpression: "year = 2010",
+                popupTemplate: {
+                    title: "{Country}",
+                    content: function(feature) {
+                        const attributes = feature.graphic.attributes;
+                        function round(value) {
+                            return value !== null ? value.toFixed(4) : "N/A";
+                        }
+                        return `
+                            <b>Year:</b> ${attributes.year} <br>
+                            <b>${document.getElementById("featureSelect").selectedOptions[0].text}:</b> ${round(attributes[document.getElementById("featureSelect").value])}
+                        `;
+                    }
+                },
+                alpha: 0.5
+            });
+            map.add(layer);
+
+            function updateLayer() {
+                const selectedFeature = document.getElementById("featureSelect").value;
+                const selectedYear = document.getElementById("yearSlider").value;
+                document.getElementById("yearLabel").innerText = selectedYear;
+
+                layer.definitionExpression = `year = ${selectedYear}`;
+
+                const query = new Query();
+                query.where = `year = ${selectedYear}`;
+                query.outStatistics = [
+                    {
+                        statisticType: "min",
+                        onStatisticField: selectedFeature,
+                        outStatisticFieldName: "minValue"
+                    },
+                    {
+                        statisticType: "max",
+                        onStatisticField: selectedFeature,
+                        outStatisticFieldName: "maxValue"
+                    }
+                ];
+                query.returnGeometry = false;
+
+                layer.queryFeatures(query).then(function (result) {
+                    if (result.features.length > 0) {
+                        const stats = result.features[0].attributes;
+                        const minValue = stats.minValue;
+                        const maxValue = stats.maxValue;
+                        const range = maxValue - minValue;
+
+                        layer.renderer = {
+                            type: "class-breaks",
+                            alpha: 0.4,
+                            field: selectedFeature,
+                            classBreakInfos: [
+                                { minValue: minValue, maxValue: minValue + range * 0.34, symbol: { type: "simple-fill", color: "#de2d26" } },
+                                { minValue: minValue + range * 0.34, maxValue: minValue + range * 0.68, symbol: { type: "simple-fill", color: "#ce93d8" } },
+                                { minValue: minValue + range * 0.68, maxValue: minValue + range, symbol: { type: "simple-fill", color: "#2171b5" } }
+                            ]
+                        };
+
+                        layer.refresh();
+                        updateLegend(minValue, maxValue);
+                    }
+                });
+            }
+
+            function updateLegend(minValue, maxValue) {
+                const legendContent = document.getElementById("legendContent");
+                legendContent.innerHTML = `
+                    <div style="background:#de2d26; padding:5px;">Low (${minValue.toFixed(2)})</div>
+                    <div style="background:#ce93d8; padding:5px;">Medium (${((minValue + maxValue) / 2).toFixed(2)})</div>
+                    <div style="background:#2171b5; padding:5px;">High (${maxValue.toFixed(2)})</div>
+                `;
+            }
+
+            function showFeatureDescription() {
+                const select = document.getElementById("featureSelect");
+                const description = select.options[select.selectedIndex].dataset.desc;
+                document.getElementById("featureDesc").innerText = description;
+                document.getElementById("descriptionPopup").style.display = "block";
+            }
+
+            document.getElementById("yearSlider").addEventListener("input", updateLayer);
+            document.getElementById("featureSelect").addEventListener("change", () => {
+                updateLayer();
+                showFeatureDescription();
+            });
+
+            // Initial update
+            updateLayer();
+            showFeatureDescription();
+        });
+    </script>
+</body>
+</html>
