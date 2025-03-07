@@ -1,245 +1,280 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Choropleth Map with ArcGIS</title>
-    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
-    <script src="https://js.arcgis.com/4.29/"></script>
-    <style>
-        html, body, #viewDiv {
-            height: 100%;
-            width: 100%;
-            margin: 0;
-            padding: 0;
-        }
-        #controls {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: white;
-            padding: 10px;
-            z-index: 10;
-            border-radius: 5px;
-        }
-        #descriptionPopup {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: white;
-            padding: 10px;
-            z-index: 10;
-            border-radius: 2px;
-            border: black;
-            display: none;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Choropleth Map with ArcGIS</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.29/"></script>
+  <style>
+    html, body, #viewDiv {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 10px;
+      z-index: 10;
+      border-radius: 5px;
+    }
+    #descriptionPopup {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: white;
+      padding: 10px;
+      z-index: 10;
+      border-radius: 2px;
+      border: black;
+      display: none;
+    }
+  </style>
 </head>
 <body>
-    <div id="controls">
-        <label for="yearSlider">Select Year:</label>
-        <input type="range" id="yearSlider" min="1960" max="2021" value="2000" step="1"/>
-        <span id="yearLabel">2010</span>
-        <br/><label for="featureSelect">Choose Feature:</label>
-        <select id="featureSelect">
-            <option value="e_fh_status" data-desc="Freedom House status designation (1: Free, 2: Partly Free, 3: Not Free)">Freedom House Status</option>
-            <option value="v2x_mpi" data-desc="Multiplicative polyarchy index measuring electoral democracy">Multiplicative Polyarchy</option>
-            <option value="e_lexical_index" data-desc="Lexical democracy index categorization:
-            0: No elections
-            1: No party or one-party elections
-            2: Multi-party elections for legislature
-            3: Multi-party elections for legislature and executive
-            4: Minimally competitive elections
-            5: Male or female suffrage
-            6: Universal suffrage">Lexical Democracy</option>
-            <option value="v2x_libdem" data-desc="Liberal democracy index evaluating individual rights">Liberal Democracy</option>
-            <option value="v2xcl_rol" data-desc="Rule of Law index measuring legal equality and access to justice">Rule of Law</option>
-            <option value="v2x_egaldem" data-desc="Egalitarian democracy index focusing on equal political participation">Egalitarian Democracy</option>
-            <option value="e_fh_pr" data-desc="Freedom House political rights score">FH Political Rights</option>
-            <option value="e_fh_cl" data-desc="Freedom House civil liberties score">FH Civil Liberties</option>
-            <option value="pred_cl" data-desc="Predicted civil liberties score">Predicted Civil Liberties</option>
-            <option value="pred_pr" data-desc="Predicted political rights score">Predicted Political Rights</option>
-            <option value="pred_status" data-desc="Predicted Freedom House status (1: Free, 2: Partly Free, 3: Not Free)">Predicted Status</option>
-        </select>
-    </div>
-    <div id="descriptionPopup">
-        <h4>Feature Description</h4>
-        <p id="featureDesc">Select a variable to see its description.</p>
-    </div>
-    <div id="viewDiv"></div>
-    
-    <script>
-        require(["esri/Map", "esri/views/MapView", "esri/layers/FeatureLayer", "esri/widgets/Slider",
-             "esri/widgets/Expand", "esri/rest/support/Query", "esri/widgets/Legend", "esri/Color"], 
-        function(Map, MapView, FeatureLayer, Slider, Expand, Query, Legend, Color) {
-            const map = new Map({ basemap: "topo-vector" });
-            const view = new MapView({ container: "viewDiv", map: map, center: [0, 20], zoom: 3, constraints: {minZoom: 3}});
+  <div id="controls">
+    <label for="yearSlider">Select Year:</label>
+    <input type="range" id="yearSlider" min="1960" max="2021" value="2000" step="1"/>
+    <span id="yearLabel">2010</span>
+    <br/>
+    <label for="featureSelect">Choose Feature:</label>
+    <select id="featureSelect">
+      <option value="e_fh_status" data-desc="Freedom House status designation (1: Free, 2: Partly Free, 3: Not Free)">Freedom House Status</option>
+      <option value="v2x_mpi" data-desc="Multiplicative polyarchy index measuring electoral democracy">Multiplicative Polyarchy</option>
+      <option value="e_lexical_index" data-desc="Lexical democracy index categorization: 
+      0: No elections, 
+      1: No party or one-party elections, 
+      2: Multi-party elections for legislature, 
+      3: Multi-party elections for legislature and executive, 
+      4: Minimally competitive elections, 
+      5: Male or female suffrage, 
+      6: Universal suffrage">Lexical Democracy</option>
+      <option value="v2x_libdem" data-desc="Liberal democracy index evaluating individual rights">Liberal Democracy</option>
+      <option value="v2xcl_rol" data-desc="Rule of Law index measuring legal equality and access to justice">Rule of Law</option>
+      <option value="v2x_egaldem" data-desc="Egalitarian democracy index focusing on equal political participation">Egalitarian Democracy</option>
+      <option value="e_fh_pr" data-desc="Freedom House political rights score">FH Political Rights</option>
+      <option value="e_fh_cl" data-desc="Freedom House civil liberties score">FH Civil Liberties</option>
+      <option value="pred_cl" data-desc="Predicted civil liberties score">Predicted Civil Liberties</option>
+      <option value="pred_pr" data-desc="Predicted political rights score">Predicted Political Rights</option>
+      <option value="pred_status" data-desc="Predicted Freedom House status (1: Free, 2: Partly Free, 3: Not Free)">Predicted Status</option>
+    </select>
+    <br/>
+    <label for="featureSelect2">Choose Second Feature:</label>
+    <select id="featureSelect2">
+      <option value="none" data-desc="No second feature">No feature</option>
+      <option value="e_fh_status" data-desc="Freedom House status designation (1: Free, 2: Partly Free, 3: Not Free)">Freedom House Status</option>
+      <option value="v2x_mpi" data-desc="Multiplicative polyarchy index measuring electoral democracy">Multiplicative Polyarchy</option>
+      <option value="e_lexical_index" data-desc="Lexical democracy index categorization: 
+      0: No elections, 1: No party or one-party elections, 
+      2: Multi-party elections for legislature, 
+      3: Multi-party elections for legislature and executive, 
+      4: Minimally competitive elections, 
+      5: Male or female suffrage, 
+      6: Universal suffrage">Lexical Democracy</option>
+      <option value="v2x_libdem" data-desc="Liberal democracy index evaluating individual rights">Liberal Democracy</option>
+      <option value="v2xcl_rol" data-desc="Rule of Law index measuring legal equality and access to justice">Rule of Law</option>
+      <option value="v2x_egaldem" data-desc="Egalitarian democracy index focusing on equal political participation">Egalitarian Democracy</option>
+      <option value="e_fh_pr" data-desc="Freedom House political rights score">FH Political Rights</option>
+      <option value="e_fh_cl" data-desc="Freedom House civil liberties score">FH Civil Liberties</option>
+      <option value="pred_cl" data-desc="Predicted civil liberties score">Predicted Civil Liberties</option>
+      <option value="pred_pr" data-desc="Predicted political rights score">Predicted Political Rights</option>
+      <option value="pred_status" data-desc="Predicted Freedom House status (1: Free, 2: Partly Free, 3: Not Free)">Predicted Status</option>
+    </select>
+  </div>
+  <div id="descriptionPopup">
+    <h4>Feature Description</h4>
+    <p id="featureDesc">Select a variable to see its description.</p>
+  </div>
+  <div id="viewDiv"></div>
+  
+  <script>
+    require([
+      "esri/Map", 
+      "esri/views/MapView", 
+      "esri/layers/FeatureLayer", 
+      "esri/widgets/Legend",
+      "esri/rest/support/Query"
+    ], function(Map, MapView, FeatureLayer, Legend, Query) {
 
-            const layer = new FeatureLayer({
-                url: "https://services.arcgis.com/LBbVDC0hKPAnLRpO/arcgis/rest/services/Dashboard_data/FeatureServer",
-                outFields: ["*"],
-                definitionExpression: "year = 2010",
-                popupTemplate: {
-                    title: "{Country}",
-                    content: function(feature) {
-                        const attributes = feature.graphic.attributes;
-                        function round(value) {
-                            return value !== null ? value.toFixed(4) : "N/A";
-                        }
-                        return `
-                            <b>Year:</b> ${attributes.year} <br>
-                            <b>e_fh_status:</b> ${attributes.e_fh_status} <br>
-                            <b>v2x_mpi:</b> ${round(attributes.v2x_mpi)} <br>
-                            <b>e_lexical_index:</b> ${attributes.e_lexical_index} <br>
-                            <b>v2x_libdem:</b> ${round(attributes.v2x_libdem)} <br>
-                            <b>v2xcl_rol:</b> ${round(attributes.v2xcl_rol)} <br>
-                            <b>v2x_egaldem:</b> ${round(attributes.v2x_egaldem)} <br>
-                            <b>e_fh_pr:</b> ${attributes.e_fh_pr} <br>
-                            <b>e_fh_cl:</b> ${attributes.e_fh_cl} <br>
-                            <b>pred_cl:</b> ${attributes.pred_cl} <br>
-                            <b>pred_pr:</b> ${attributes.pred_pr} <br>
-                            <b>pred_status:</b> ${attributes.pred_status} <br>
-                        `;
-                    }
-                },
-                alpha: 0.5
-            });
-            map.add(layer);
+      const map = new Map({ basemap: "topo-vector" });
+      const view = new MapView({ container: "viewDiv", map: map, center: [0, 20], zoom: 3, constraints: {minZoom: 3} });
 
-            let legend = new Legend({
-                view: view
-                });
-            view.ui.add(legend, "bottom-right");
-            
-            function updateLayer() {
-                const selectedFeature = document.getElementById("featureSelect").value;
-                const selectedYear = document.getElementById("yearSlider").value;
-                document.getElementById("yearLabel").innerText = selectedYear;
-
-                legend.title = selectedFeature;
-
-                layer.definitionExpression = `year = ${selectedYear}`;
-
-                const query = new Query();
-                query.where = `year = ${selectedYear}`;
-                query.outStatistics = [
-                    {
-                        statisticType: "min",
-                        onStatisticField: selectedFeature,
-                        outStatisticFieldName: "minValue"
-                    },
-                    {
-                        statisticType: "max",
-                        onStatisticField: selectedFeature,
-                        outStatisticFieldName: "maxValue"
-                    }
-                ];
-                query.returnGeometry = false;
-
-
-                layer.queryFeatures(query).then(function (result) {
-
-                    const query = new Query();
-                    query.where = `year = ${selectedYear}`;
-                    query.returnGeometry = false;
-                    query.groupByFieldsForStatistics = [selectedFeature];
-                    query.outStatistics = [
-                        {
-                            statisticType: "count",
-                            onStatisticField: selectedFeature,
-                            outStatisticFieldName: "uniqueCount"
-                        }
-                    ];
-
-                    let uniqueValues = 0;
-
-                    layer.queryFeatures(query).then(function (result2) {
-                        uniqueValues = result2.features.length;
-                        const stats = result.features[0].attributes;
-                        const minValue = stats.minValue;
-                        const maxValue = stats.maxValue;
-
-                        if (uniqueValues > 7) {
-                            const range = maxValue - minValue;
-
-                            layer.renderer = {
-                                type: "class-breaks",
-                                alpha: 0.4,
-                                field: selectedFeature,
-                                classBreakInfos: [
-                                    { minValue: minValue, maxValue: minValue + range * 0.2, symbol: { type: "simple-fill", color: "#a05195" } },
-                                    { minValue: minValue + range * 0.2, maxValue: minValue + range * 0.4, symbol: { type: "simple-fill", color: "#d4b9ff" } },
-                                    { minValue: minValue + range * 0.4, maxValue: minValue + range * 0.6, symbol: { type: "simple-fill", color: "#f2e5ff" } },
-                                    { minValue: minValue + range * 0.6, maxValue: minValue + range * 0.8, symbol: { type: "simple-fill", color: "#31a354" } },
-                                    { minValue: minValue + range * 0.8, maxValue: maxValue, symbol: { type: "simple-fill", color: "#006d2c" } }
-                                ]
-                            };
-                            layer.opacity = 0.7;
-                            layer.refresh();   
-                        } 
-                        else {
-
-                            let uniques = [];
-                        
-                            for (let i = minValue; i <= maxValue; i++) {
-                                //dont mind this just trying to match class break colors
-                                let normalized = (i - minValue) / (maxValue - minValue);
-
-                                let red, green, blue;
-                                
-                                if (normalized < 0.5) {
-                                    red = Math.round(120 + (230 - 120) * (normalized / 0.5));
-                                    green = Math.round(0 + (200 - 0) * (normalized / 0.5));
-                                    blue = Math.round(120 + (255 - 120) * (normalized / 0.5));
-                                } else {
-                                    red = Math.round(230 - (230 - 0) * ((normalized - 0.5) / 0.5));
-                                    green = Math.round(200 - (200 - 180) * ((normalized - 0.5) / 0.5));
-                                    blue = Math.round(255 - (255 - 0) * ((normalized - 0.5) / 0.5));
-                                }
-
-                                uniques.push({
-                                    value: i,
-                                    symbol: {
-                                        type: "simple-fill",
-                                        color: [red, green, blue]
-                                    }
-                                });
-                            }
-                            layer.renderer = {
-                                type: "unique-value",
-                                field: selectedFeature,
-                                uniqueValueInfos: uniques
-                            };
-                            layer.opacity = 0.7;
-                            layer.refresh();  
-                        }
-                    });   
-                    
-
-                });
+      const layer = new FeatureLayer({
+        url: "https://services.arcgis.com/LBbVDC0hKPAnLRpO/arcgis/rest/services/Dashboard_data/FeatureServer",
+        outFields: ["*"],
+        definitionExpression: "year = 2010",
+        popupTemplate: {
+          title: "{Country}",
+          content: function(feature) {
+            const attributes = feature.graphic.attributes;
+            function round(value) {
+              return value !== null ? value.toFixed(4) : "N/A";
             }
+            return `
+              <b>Year:</b> ${attributes.year} <br>
+              <b>e_fh_status:</b> ${attributes.e_fh_status} <br>
+              <b>v2x_mpi:</b> ${round(attributes.v2x_mpi)} <br>
+              <b>e_lexical_index:</b> ${attributes.e_lexical_index} <br>
+              <b>v2x_libdem:</b> ${round(attributes.v2x_libdem)} <br>
+              <b>v2xcl_rol:</b> ${round(attributes.v2xcl_rol)} <br>
+              <b>v2x_egaldem:</b> ${round(attributes.v2x_egaldem)} <br>
+              <b>e_fh_pr:</b> ${attributes.e_fh_pr} <br>
+              <b>e_fh_cl:</b> ${attributes.e_fh_cl} <br>
+              <b>pred_cl:</b> ${attributes.pred_cl} <br>
+              <b>pred_pr:</b> ${attributes.pred_pr} <br>
+              <b>pred_status:</b> ${attributes.pred_status} <br>
+            `;
+          }
+        },
+        alpha: 0.5
+      });
+      map.add(layer);
 
-            function showFeatureDescription() {
-                const select = document.getElementById("featureSelect");
-                const description = select.options[select.selectedIndex].dataset.desc;
-                document.getElementById("featureDesc").innerText = description;
-                document.getElementById("descriptionPopup").style.display = "block";
-            }
+      let legend = new Legend({ view: view });
+      view.ui.add(legend, "bottom-right");
 
-            document.getElementById("yearSlider").addEventListener("input", updateLayer);
-            document.getElementById("featureSelect").addEventListener("change", () => {
-                updateLayer();
-                showFeatureDescription();
+      function updateLayer() {
+        const selectedFeature1 = document.getElementById("featureSelect").value;
+        const selectedFeature2 = document.getElementById("featureSelect2").value;
+        const selectedYear = document.getElementById("yearSlider").value;
+        document.getElementById("yearLabel").innerText = selectedYear;
+        
+        // Always update the layer definition for the year
+        layer.definitionExpression = `year = ${selectedYear}`;
+        
+        // If a second feature is selected (not "No feature"), create a bivariate relationship renderer
+        if (selectedFeature2 !== "none") {
+        // Ensure the layer is fully loaded before creating the relationship renderer
+        layer.when(() => {
+            require(["esri/smartMapping/renderers/relationship"], function(relationshipRendererCreator) {
+            relationshipRendererCreator.createRenderer({
+                layer: layer,
+                view: view,
+                field1: {field: selectedFeature1},
+                field2: {field: selectedFeature2},
+                classificationMethod: "natural-breaks",
+                showOthers: false,
+                focus: "HH"
+            }).then(function(response) {
+                layer.renderer = response.renderer;
+                legend.title = `${selectedFeature1} vs ${selectedFeature2}`;
+                layer.opacity = 0.7;
+                layer.refresh();
+            }).catch(function(error) {
+                console.error("Error creating relationship renderer:", error);
             });
-
-
-            
-            document.getElementById("yearSlider").addEventListener("input", updateLayer);
-            document.getElementById("featureSelect").addEventListener("change", () => {
-                updateLayer();
-                showFeatureDescription();
             });
         });
-    </script>
+        return; // Skip the single-feature rendering logic
+        }
+
+        
+        // Single-feature rendering logic (unchanged)
+        const query = new Query();
+        query.where = `year = ${selectedYear}`;
+        query.outStatistics = [
+          {
+            statisticType: "min",
+            onStatisticField: selectedFeature1,
+            outStatisticFieldName: "minValue"
+          },
+          {
+            statisticType: "max",
+            onStatisticField: selectedFeature1,
+            outStatisticFieldName: "maxValue"
+          }
+        ];
+        query.returnGeometry = false;
+        
+        layer.queryFeatures(query).then(function (result) {
+          const stats = result.features[0].attributes;
+          const minValue = stats.minValue;
+          const maxValue = stats.maxValue;
+          
+          const query2 = new Query();
+          query2.where = `year = ${selectedYear}`;
+          query2.returnGeometry = false;
+          query2.groupByFieldsForStatistics = [selectedFeature1];
+          query2.outStatistics = [
+            {
+              statisticType: "count",
+              onStatisticField: selectedFeature1,
+              outStatisticFieldName: "uniqueCount"
+            }
+          ];
+          
+          layer.queryFeatures(query2).then(function (result2) {
+            const uniqueValues = result2.features.length;
+            if (uniqueValues > 7) {
+              const range = maxValue - minValue;
+              layer.renderer = {
+                type: "class-breaks",
+                alpha: 0.4,
+                field: selectedFeature1,
+                classBreakInfos: [
+                  { minValue: minValue, maxValue: minValue + range * 0.2, symbol: { type: "simple-fill", color: "#a05195" } },
+                  { minValue: minValue + range * 0.2, maxValue: minValue + range * 0.4, symbol: { type: "simple-fill", color: "#d4b9ff" } },
+                  { minValue: minValue + range * 0.4, maxValue: minValue + range * 0.6, symbol: { type: "simple-fill", color: "#f2e5ff" } },
+                  { minValue: minValue + range * 0.6, maxValue: minValue + range * 0.8, symbol: { type: "simple-fill", color: "#31a354" } },
+                  { minValue: minValue + range * 0.8, maxValue: maxValue, symbol: { type: "simple-fill", color: "#006d2c" } }
+                ]
+              };
+              legend.title = selectedFeature1;
+              layer.opacity = 0.7;
+              layer.refresh();
+            } else {
+              let uniques = [];
+              for (let i = minValue; i <= maxValue; i++) {
+                let normalized = (i - minValue) / (maxValue - minValue);
+                let red, green, blue;
+                if (normalized < 0.5) {
+                  red = Math.round(120 + (230 - 120) * (normalized / 0.5));
+                  green = Math.round(0 + (200 - 0) * (normalized / 0.5));
+                  blue = Math.round(120 + (255 - 120) * (normalized / 0.5));
+                } else {
+                  red = Math.round(230 - (230 - 0) * ((normalized - 0.5) / 0.5));
+                  green = Math.round(200 - (200 - 180) * ((normalized - 0.5) / 0.5));
+                  blue = Math.round(255 - (255 - 0) * ((normalized - 0.5) / 0.5));
+                }
+                uniques.push({
+                  value: i,
+                  symbol: {
+                    type: "simple-fill",
+                    color: [red, green, blue]
+                  }
+                });
+              }
+              layer.renderer = {
+                type: "unique-value",
+                field: selectedFeature1,
+                uniqueValueInfos: uniques
+              };
+              legend.title = selectedFeature1;
+              layer.opacity = 0.7;
+              layer.refresh();
+            }
+          });
+        });
+      }
+
+      function showFeatureDescription() {
+        const select = document.getElementById("featureSelect");
+        const description = select.options[select.selectedIndex].dataset.desc;
+        document.getElementById("featureDesc").innerText = description;
+        document.getElementById("descriptionPopup").style.display = "block";
+      }
+
+      document.getElementById("yearSlider").addEventListener("input", updateLayer);
+      document.getElementById("featureSelect").addEventListener("change", () => {
+        updateLayer();
+        showFeatureDescription();
+      });
+      document.getElementById("featureSelect2").addEventListener("change", updateLayer);
+    });
+  </script>
 </body>
 </html>
