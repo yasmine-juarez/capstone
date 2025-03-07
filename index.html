@@ -182,15 +182,29 @@
                             let uniques = [];
                         
                             for (let i = minValue; i <= maxValue; i++) {
+                                //dont mind this just trying to match class break colors
+                                let normalized = (i - minValue) / (maxValue - minValue);
+
+                                let red, green, blue;
+                                
+                                if (normalized < 0.5) {
+                                    red = Math.round(120 + (230 - 120) * (normalized / 0.5));
+                                    green = Math.round(0 + (200 - 0) * (normalized / 0.5));
+                                    blue = Math.round(120 + (255 - 120) * (normalized / 0.5));
+                                } else {
+                                    red = Math.round(230 - (230 - 0) * ((normalized - 0.5) / 0.5));
+                                    green = Math.round(200 - (200 - 180) * ((normalized - 0.5) / 0.5));
+                                    blue = Math.round(255 - (255 - 0) * ((normalized - 0.5) / 0.5));
+                                }
+
                                 uniques.push({
                                     value: i,
                                     symbol: {
                                         type: "simple-fill",
-                                        color: [120, (255 - 255*(i-0.5)/maxValue).toFixed(0), 120]
+                                        color: [red, green, blue]
                                     }
                                 });
                             }
-                            console.log(uniques)
                             layer.renderer = {
                                 type: "unique-value",
                                 field: selectedFeature,
